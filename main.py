@@ -61,7 +61,8 @@ custom_prompt = PromptTemplate(
     input_variables=["context", "question"],
     template=(
         "You are an assistant. Use the following context to answer the user's question. "
-        "If the context does not provide enough information, say 'I don't know'.\n"
+        "If the context does not provide enough information, say 'I don't know'.\n\n"
+        "Context:\n{context}\n\nQuestion: {question}\nAnswer:"
     ),
 )
 
@@ -96,7 +97,7 @@ def load_or_create_vector_store(chunks, embeddings, index_path="faiss_index"):
         return vector_store
 
 
-if __name__ == "__main__":
+def get_rag_chain():
     docs = load_documents()
     if not docs:
         print("No documents found in 'documents' directory. Add .txt files and rerun.")
