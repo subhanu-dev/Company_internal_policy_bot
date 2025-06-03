@@ -1,12 +1,14 @@
 from dotenv import load_dotenv
+
 import os
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
 
 from langchain_groq import ChatGroq
 from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
 
 
 load_dotenv()
@@ -55,6 +57,15 @@ def setup_llm():
     return llm
 
 
+custom_prompt = PromptTemplate(
+    input_variables=["context", "question"],
+    template=(
+        "You are an assistant. Use the following context to answer the user's question. "
+        "If the context does not provide enough information, say 'I don't know'.\n"
+    ),
+)
+
+
 # Create RAG chain
 def create_rag_chain(vector_store, llm):
     retriever = vector_store.as_retriever(search_kwargs={"k": 3})  # Get top 3 chunks
@@ -62,24 +73,45 @@ def create_rag_chain(vector_store, llm):
         llm=llm,
         chain_type="stuff",  # Combines retrieved chunks into prompt
         retriever=retriever,
-        return_source_documents=True,
+        return_source_documents=False,
+        chain_type_kwargs={"prompt": custom_prompt},
     )
     return qa_chain
 
 
-# Update main to include interactive loop
+def load_or_create_vector_store(chunks, embeddings, index_path="faiss_index"):
+    import os
+
+    faiss_file = os.path.join(index_path, "index.faiss")
+    pkl_file = os.path.join(index_path, "index.pkl")
+    if os.path.exists(faiss_file) and os.path.exists(pkl_file):
+        print("Loading existing FAISS index...")
+        return FAISS.load_local(
+            index_path, embeddings, allow_dangerous_deserialization=True
+        )
+    else:
+        print("Creating new FAISS index...")
+        vector_store = FAISS.from_documents(chunks, embeddings)
+        vector_store.save_local(index_path)
+        return vector_store
+
+
 if __name__ == "__main__":
     docs = load_documents()
     if not docs:
         print("No documents found in 'documents' directory. Add .txt files and rerun.")
     else:
         chunks = split_documents(docs)
-        print(f"Loaded {len(docs)} documents, split into {len(chunks)} chunks.")
-        print("Sample chunk:", chunks[0].page_content[:100])
-        vector_store = create_vector_store(chunks)
-        print("FAISS vector store created with", len(chunks), "chunks.")
+        # print(f"Loaded {len(docs)} documents, split into {len(chunks)} chunks.")
+        # print("Sample chunk:", chunks[0].page_content[:100])
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
+        vector_store = load_or_create_vector_store(chunks, embeddings)
+        # print("FAISS vector store ready with", len(chunks), "chunks.")
         llm = setup_llm()
         rag_chain = create_rag_chain(vector_store, llm)
+
         # Interactive loop
         print("RAG Chatbot ready! Type 'exit' to quit.")
         while True:
@@ -88,5 +120,5 @@ if __name__ == "__main__":
                 break
             result = rag_chain({"query": query})
             print("Answer:", result["result"])
-            print("Sources:", [doc.metadata for doc in result["source_documents"]])
+            # print("Sources:", [doc.metadata for doc in result["source_documents"]])
             print()
