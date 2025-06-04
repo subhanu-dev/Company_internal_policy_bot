@@ -1,0 +1,18 @@
+# IT Guidelines
+
+## Laptop Issuance
+All full-time employees will be issued a company laptop within 3 days of joining. Temporary staff may use shared systems.
+
+## Password Policy
+- Passwords must be changed every 90 days
+- Minimum 12 characters
+- Use at least one uppercase, one number, and one symbol
+
+## Software Installation
+Unauthorized software installations are not allowed. Employees must request approvals via the IT Request Form.
+
+## VPN Usage
+Remote access to internal systems must be done through the company VPN. Credentials will be sent during onboarding.
+
+## Support Hours
+IT support is available from 8 AM to 8 PM, Monday to Friday. Email: it-help@company.io

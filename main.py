@@ -7,9 +7,9 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 from langchain_groq import ChatGroq
-from langchain.chains import RetrievalQA
+from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
-
+from langchain.memory import ConversationBufferWindowMemory
 
 load_dotenv()
 groq_api_key = os.getenv("GROQ_API_KEY")
@@ -52,37 +52,44 @@ def setup_llm():
     llm = ChatGroq(
         model_name="llama3-8b-8192",
         groq_api_key=os.environ.get("GROQ_API_KEY"),
-        temperature=0,  # For consistent answers
+        temperature=0.2,  # For consistent answers
     )
     return llm
 
 
+# Custom prompt template with history
 custom_prompt = PromptTemplate(
-    input_variables=["context", "question"],
+    input_variables=["context", "question", "chat_history"],
     template=(
-        "You are an assistant. Use the following context to answer the user's question. "
-        "If the context does not provide enough information, say 'I don't know'.\n\n"
-        "Context:\n{context}\n\nQuestion: {question}\nAnswer:"
+        "You are an assistant on company internal policy. An internal knowledge bot. Use the provided context and recent conversation history to answer the user's question concisely. "
+        "Conversation History:\n{chat_history}\n\n"
+        "Context:\n{context}\n\n"
+        "Question: {question}\n\nAnswer:"
     ),
 )
 
 
-# Create RAG chain
+# Create Conversational RAG chain
 def create_rag_chain(vector_store, llm):
-    retriever = vector_store.as_retriever(search_kwargs={"k": 3})  # Get top 3 chunks
-    qa_chain = RetrievalQA.from_chain_type(
+    retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+    # Initialize memory with a rolling window (e.g., last 5 exchanges)
+    memory = ConversationBufferWindowMemory(
+        memory_key="chat_history",
+        return_messages=True,
+        k=5,
+    )
+    qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
-        chain_type="stuff",  # Combines retrieved chunks into prompt
         retriever=retriever,
+        memory=memory,
+        combine_docs_chain_kwargs={"prompt": custom_prompt},
         return_source_documents=False,
-        chain_type_kwargs={"prompt": custom_prompt},
     )
     return qa_chain
 
 
+# Load or create vector store
 def load_or_create_vector_store(chunks, embeddings, index_path="faiss_index"):
-    import os
-
     faiss_file = os.path.join(index_path, "index.faiss")
     pkl_file = os.path.join(index_path, "index.pkl")
     if os.path.exists(faiss_file) and os.path.exists(pkl_file):
@@ -97,19 +104,16 @@ def load_or_create_vector_store(chunks, embeddings, index_path="faiss_index"):
         return vector_store
 
 
-def get_rag_chain():
+if __name__ == "__main__":
     docs = load_documents()
     if not docs:
         print("No documents found in 'documents' directory. Add .txt files and rerun.")
     else:
         chunks = split_documents(docs)
-        # print(f"Loaded {len(docs)} documents, split into {len(chunks)} chunks.")
-        # print("Sample chunk:", chunks[0].page_content[:100])
         embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
         vector_store = load_or_create_vector_store(chunks, embeddings)
-        # print("FAISS vector store ready with", len(chunks), "chunks.")
         llm = setup_llm()
         rag_chain = create_rag_chain(vector_store, llm)
 
@@ -119,7 +123,21 @@ def get_rag_chain():
             query = input("Enter your question: ")
             if query.lower() == "exit":
                 break
-            result = rag_chain({"query": query})
-            print("Answer:", result["result"])
-            # print("Sources:", [doc.metadata for doc in result["source_documents"]])
-            print()
+            result = rag_chain.invoke({"question": query})
+            print("Answer:", result["answer"])
+
+
+def get_rag_chain():
+    docs = load_documents()
+    if not docs:
+        raise RuntimeError(
+            "No documents found in 'documents' directory. Add .txt files and rerun."
+        )
+    chunks = split_documents(docs)
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+    vector_store = load_or_create_vector_store(chunks, embeddings)
+    llm = setup_llm()
+    rag_chain = create_rag_chain(vector_store, llm)
+    return rag_chain
