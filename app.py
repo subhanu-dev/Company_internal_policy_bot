@@ -21,21 +21,22 @@ def chat_interface(message, history):
         {"role": "user", "content": message},
         {"role": "assistant", "content": answer},
     ]
-    return history, history
+    return history, history, ""
 
 
 with gr.Blocks() as demo:
     gr.Markdown(
-        "# RAG Chatbot\nAsk questions about your documents. Chat history is preserved below."
+        "# Intern Company Policy bot (RAG) \nAsk questions about the company policies and procedures and get answers based on internal docs."
     )
     chatbot = gr.Chatbot(type="messages")
     msg = gr.Textbox(label="Your question")
-    clear = gr.Button("Clear chat")
+    clear = gr.Button("Clear chat", variant="secondary")
 
     def clear_fn():
         return [], []
 
-    msg.submit(chat_interface, [msg, chatbot], [chatbot, chatbot])
+    msg.submit(chat_interface, [msg, chatbot], [chatbot, chatbot, msg])
     clear.click(clear_fn, [], [chatbot, chatbot])
 
-demo.launch()
+demo.launch(share=True)
+# demo.launch()

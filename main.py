@@ -92,6 +92,7 @@ def create_rag_chain(vector_store, llm):
 def load_or_create_vector_store(chunks, embeddings, index_path="faiss_index"):
     faiss_file = os.path.join(index_path, "index.faiss")
     pkl_file = os.path.join(index_path, "index.pkl")
+
     if os.path.exists(faiss_file) and os.path.exists(pkl_file):
         print("Loading existing FAISS index...")
         return FAISS.load_local(
