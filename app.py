@@ -24,19 +24,33 @@ def chat_interface(message, history):
     return history, history, ""
 
 
-with gr.Blocks() as demo:
+with gr.Blocks(
+    theme="soft",
+    css="""
+    body, .gradio-container {
+        background: linear-gradient(rgba(0,0,0.9), rgba(0,255,255, 0.6)), url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1500&q=80');
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    """,
+) as demo:
+    gr.Markdown("<div style='height: 20px'></div>")
     gr.Markdown(
-        "# Intern Company Policy bot (RAG) \nAsk questions about the company policies and procedures and get answers based on internal docs."
+        "# Internal Company Policy bot (RAG) 💬 \n Ask questions about the company policies, procedures and get answers based on internal docs."
     )
     chatbot = gr.Chatbot(type="messages")
     msg = gr.Textbox(label="Your question")
-    clear = gr.Button("Clear chat", variant="secondary")
+    with gr.Row():
+        with gr.Column(scale=1):
+            clear = gr.Button("Clear chat", variant="secondary")
+        with gr.Column(scale=9):
+            gr.Markdown("")  # Empty column to push the button to the left (or right)
 
     def clear_fn():
-        return [], []
+        return [], [], ""
 
     msg.submit(chat_interface, [msg, chatbot], [chatbot, chatbot, msg])
-    clear.click(clear_fn, [], [chatbot, chatbot])
+    clear.click(clear_fn, [], [chatbot, chatbot, msg])
 
-demo.launch(share=True)
-# demo.launch()
+demo.launch()
