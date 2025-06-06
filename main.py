@@ -19,7 +19,7 @@ groq_api_key = os.getenv("GROQ_API_KEY")
 def load_documents(directory="documents"):
     documents = []
     for filename in os.listdir(directory):
-        if filename.endswith(".txt"):
+        if filename.endswith(".txt") or filename.endswith(".md"):
             loader = TextLoader(os.path.join(directory, filename))
             documents.extend(loader.load())
     return documents
@@ -52,7 +52,7 @@ def setup_llm():
     llm = ChatGroq(
         model_name="llama3-8b-8192",
         groq_api_key=os.environ.get("GROQ_API_KEY"),
-        temperature=0.2,  # For consistent answers
+        temperature=0.4,
     )
     return llm
 
@@ -62,6 +62,7 @@ custom_prompt = PromptTemplate(
     input_variables=["context", "question", "chat_history"],
     template=(
         "You are an assistant on company internal policy. An internal knowledge bot. Use the provided context and recent conversation history to answer the user's question concisely. "
+        "If the user's question is not about company policy, or is just a greeting or thanks, respond politely and briefly without referencing policy documents without referencing policy documents or repeating previous answers. "
         "Conversation History:\n{chat_history}\n\n"
         "Context:\n{context}\n\n"
         "Question: {question}\n\nAnswer:"

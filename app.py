@@ -16,7 +16,8 @@ def chat_interface(message, history):
     # Call the RAG chain with chat history
     result = rag_chain.invoke({"question": message, "chat_history": chat_history})
     answer = result["answer"] if "answer" in result else result["result"]
-    # Append the new user and assistant messages in OpenAI format
+
+    # Append the new user and assistant messages
     history = history + [
         {"role": "user", "content": message},
         {"role": "assistant", "content": answer},
@@ -36,9 +37,11 @@ with gr.Blocks(
     """,
 ) as demo:
     gr.Markdown("<div style='height: 20px'></div>")
+
     gr.Markdown(
         "# Internal Company Policy bot (RAG) 💬 \n Ask questions about the company policies, procedures and get answers based on internal docs."
     )
+
     chatbot = gr.Chatbot(type="messages")
     msg = gr.Textbox(label="Your question")
     with gr.Row():
