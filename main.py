@@ -130,16 +130,27 @@ if __name__ == "__main__":
 
 
 def get_rag_chain():
-    docs = load_documents()
-    if not docs:
-        raise RuntimeError(
-            "No documents found in 'documents' directory. Add .txt files and rerun."
-        )
-    chunks = split_documents(docs)
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
-    vector_store = load_or_create_vector_store(chunks, embeddings)
+    index_path = "faiss_index"
+    faiss_file = os.path.join(index_path, "index.faiss")
+    pkl_file = os.path.join(index_path, "index.pkl")
+
+    if os.path.exists(faiss_file) and os.path.exists(pkl_file):
+        print("Loading existing FAISS index...")
+        vector_store = FAISS.load_local(
+            index_path, embeddings, allow_dangerous_deserialization=True
+        )
+    else:
+        docs = load_documents()
+        if not docs:
+            raise RuntimeError(
+                "No documents found in 'documents' directory. Add .txt or .md files and rerun."
+            )
+        chunks = split_documents(docs)
+        vector_store = FAISS.from_documents(chunks, embeddings)
+        vector_store.save_local(index_path)
     llm = setup_llm()
     rag_chain = create_rag_chain(vector_store, llm)
     return rag_chain
