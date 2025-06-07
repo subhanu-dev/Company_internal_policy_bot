@@ -1,3 +1,4 @@
 venv/
 faiss_index/
 /.env
+__pycache__

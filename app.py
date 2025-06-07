@@ -39,7 +39,8 @@ with gr.Blocks(
     gr.Markdown("<div style='height: 20px'></div>")
 
     gr.Markdown(
-        "# Internal Company Policy bot (RAG) 💬 \n Ask questions about the company policies, procedures and get answers based on internal docs."
+        "# Internal Company Policy bot (RAG) 💬 \n Ask questions about the company policies, procedures and get answers based on internal docs.\n"
+        "\n This bot can answer question about policies regarding HR, training and development, codes of conduct, IT support,tooling guides and more."
     )
 
     chatbot = gr.Chatbot(type="messages")

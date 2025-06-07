@@ -61,8 +61,9 @@ def setup_llm():
 custom_prompt = PromptTemplate(
     input_variables=["context", "question", "chat_history"],
     template=(
-        "You are an assistant on company internal policy. An internal knowledge bot. Use the provided context and recent conversation history to answer the user's question concisely. "
+        "You are an assistant on company internal policies."
         "If the user's question is not about company policy, or is just a greeting or thanks, respond politely and briefly without referencing policy documents without referencing policy documents or repeating previous answers. "
+        " As An internal knowledge bot. Use the provided context and recent conversation history to answer the user's question concisely. "
         "Conversation History:\n{chat_history}\n\n"
         "Context:\n{context}\n\n"
         "Question: {question}\n\nAnswer:"
