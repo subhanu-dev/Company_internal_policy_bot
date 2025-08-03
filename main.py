@@ -47,7 +47,7 @@ def create_vector_store(documents):
     return vector_store
 
 
-# Set up Groq LLM
+# Set up Groq
 def setup_llm():
     llm = ChatGroq(
         model_name="llama3-8b-8192",
