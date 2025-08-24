@@ -1,24 +1,13 @@
 import os
 import dotenv
 from openai import OpenAI
-from pydantic import BaseModel
 from fastapi import FastAPI
-
 
 dotenv.load_dotenv()  # Loads .env variables into environment
 
 openai_key = os.getenv("OPENAI_KEY")
-
 client = OpenAI(api_key=openai_key)
 
-
-# class chatResponse(BaseModel):
-#     reponse: str
-
-
-# class chatRequest(BaseModel):
-#     session_id: str
-#     input: str
 
 app = FastAPI()
 
