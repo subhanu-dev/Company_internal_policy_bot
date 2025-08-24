@@ -39,8 +39,8 @@ def chat(req: ChatRequest):
     completion = client.chat.completions.create(
         model="openai/gpt-oss-20b",
         messages=conversations[session_id],
-        temperature=0.2,
-        max_completion_tokens=512,
+        temperature=2,
+        max_completion_tokens=1000,
         top_p=1,
         stream=False,
     )
