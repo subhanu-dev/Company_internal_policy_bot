@@ -1,5 +1,4 @@
 from groq import Groq
-from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 from search import search_similar_chunks  # Import your search function
@@ -66,7 +65,12 @@ say "I don't have enough information to answer this question." Do not make up in
 Please answer the question based only on the context provided above."""
 
     else:
-        system_prompt = "You are a helpful assistant. If it's a simple greeting,like 'hello' 'good morning' reply back politely"
+        system_prompt = """You are a polite HR assistant. 
+If the query is a greeting, respond in a friendly and concise manner. 
+If the query asks about HR policies or information not found in the knowledge base, 
+respond with: "I don't have enough information in the knowledge base to answer that, 
+but you can reach out to HR for more details."""
+
         user_prompt = f"Question: {user_query}\nPlease note that I don't have specific information about this in my knowledge base."
 
     # Step 4: Generate response with Groq

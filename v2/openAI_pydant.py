@@ -26,7 +26,7 @@ app = FastAPI()
 def chat(request: ChatRequest):
     response = client.responses.create(
         model="gpt-4.1-nano",
-        instructions="talk like a loving woman",
+        instructions="talk as an a young boy",
         input=request.input,
         max_output_tokens=200,
         stream=False,

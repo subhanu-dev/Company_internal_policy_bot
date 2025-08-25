@@ -4,10 +4,12 @@ import os
 import numpy as np
 import faiss
 import pickle
+from pinecone import Pinecone
 
 
 load_dotenv()
 openai_key = os.getenv("OPENAI_KEY")
+pinecone_key = os.getenv("PINECONE_KEY")
 
 client = OpenAI(api_key=openai_key)
 
@@ -53,7 +55,7 @@ for filename in file_list:
 
 
 # print(all_chunks)
-print("count of all chunks:", len(all_chunks))
+# print("count of all chunks:", len(all_chunks))
 
 embeddings = []
 
@@ -70,7 +72,7 @@ def generate_embeddings():
 generate_embeddings()
 
 # Print embedding info
-print(len(embeddings))
+# print(len(embeddings))
 
 # for i, emb in enumerate(embeddings):
 #     print(f"Chunk {i} embedding length: {len(emb)}")
@@ -89,32 +91,51 @@ normalized_embeddings = np.array(
     [l2_normalize(e) for e in embeddings], dtype=np.float32
 )
 
-print(normalized_embeddings[0])  # taking a look at normalized embeddings
+# print(normalized_embeddings[0])  # taking a look at normalized embeddings
 
-# writing embeddings into vector dbs.
+# # writing embeddings into vector dbs.
 
-embedding_dim = normalized_embeddings.shape[1]
-# print(embedding_dim) # 1536i bn
+# embedding_dim = normalized_embeddings.shape[1]
+# # print(embedding_dim) # 1536i bn
 
-index = faiss.IndexFlatIP(
-    embedding_dim
-)  # Inner product = cosine similarity for normalized vectors
-index.add(normalized_embeddings)
+# index = faiss.IndexFlatIP(
+#     embedding_dim
+# )  # Inner product = cosine similarity for normalized vectors
+# index.add(normalized_embeddings)
 
-index_path = "C:\\web-dev\\RAG Chatbot\\v2\\faiss\\vector_index.faiss"
+# index_path = "C:\\web-dev\\RAG Chatbot\\v2\\faiss\\vector_index.faiss"
 
-faiss.write_index(index, index_path)
+# faiss.write_index(index, index_path)
 
-print(f"FAISS index saved to {index_path}")
+# print(f"FAISS index saved to {index_path}")
 
-# Save the chunks that correspond to the vectors by position
-chunks_path = "C:\\web-dev\\RAG Chatbot\\v2\\faiss\\chunks.pkl"
-with open(chunks_path, "wb") as f:
-    pickle.dump(all_chunks, f)
-print(f"Chunks saved to {chunks_path}")
+# # Save the chunks that correspond to the vectors by position
+# chunks_path = "C:\\web-dev\\RAG Chatbot\\v2\\faiss\\chunks.pkl"
+# with open(chunks_path, "wb") as f:
+#     pickle.dump(all_chunks, f)
+# print(f"Chunks saved to {chunks_path}")
 
-"""
-chunks.pkl file that stores your text chunks in the same order as they 
-appear in the FAISS index.
- When you search the index later, the indices returned will match the positions in this chunks file.
-"""
+# """
+# chunks.pkl file that stores your text chunks in the same order as they
+# appear in the FAISS index.
+#  When you search the index later, the indices returned will match the positions in this chunks file.
+# """
+
+
+pc = Pinecone(api_key=pinecone_key)
+
+# index_list = pc.list_indexes()
+
+# print(index_list)
+index = pc.Index(host="https://hr-policy-rag-pa3ndtj.svc.aped-4627-b74a.pinecone.io")
+
+
+vectors = [
+    (f"chunk-{i}", normalized_embeddings[i].tolist(), {"text": all_chunks[i]})
+    for i in range(len(all_chunks))
+]
+
+# Upsert in batches
+batch_size = 100
+for i in range(0, len(vectors), batch_size):
+    index.upsert(vectors=vectors[i : i + batch_size], namespace="default")
