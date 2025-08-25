@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 import os
 import numpy as np
 import faiss
+import pickle
+
 
 load_dotenv()
 openai_key = os.getenv("OPENAI_KEY")
@@ -65,6 +67,8 @@ def generate_embeddings():
         embeddings.append(response.data[0].embedding)
 
 
+generate_embeddings()
+
 # Print embedding info
 print(len(embeddings))
 
@@ -72,3 +76,45 @@ print(len(embeddings))
 #     print(f"Chunk {i} embedding length: {len(emb)}")
 
 # print(embeddings[0])
+
+
+embeddings = np.array(embeddings, dtype=np.float32)
+
+
+def l2_normalize(vec):
+    return vec / np.linalg.norm(vec)
+
+
+normalized_embeddings = np.array(
+    [l2_normalize(e) for e in embeddings], dtype=np.float32
+)
+
+print(normalized_embeddings[0])  # taking a look at normalized embeddings
+
+# writing embeddings into vector dbs.
+
+embedding_dim = normalized_embeddings.shape[1]
+# print(embedding_dim) # 1536i bn
+
+index = faiss.IndexFlatIP(
+    embedding_dim
+)  # Inner product = cosine similarity for normalized vectors
+index.add(normalized_embeddings)
+
+index_path = "C:\\web-dev\\RAG Chatbot\\v2\\faiss\\vector_index.faiss"
+
+faiss.write_index(index, index_path)
+
+print(f"FAISS index saved to {index_path}")
+
+# Save the chunks that correspond to the vectors by position
+chunks_path = "C:\\web-dev\\RAG Chatbot\\v2\\faiss\\chunks.pkl"
+with open(chunks_path, "wb") as f:
+    pickle.dump(all_chunks, f)
+print(f"Chunks saved to {chunks_path}")
+
+"""
+chunks.pkl file that stores your text chunks in the same order as they 
+appear in the FAISS index.
+ When you search the index later, the indices returned will match the positions in this chunks file.
+"""
